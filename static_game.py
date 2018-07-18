@@ -6,6 +6,7 @@ class Grid2048:
 
 	def __init__(self):
 		self.grid = [[0 for i in range(4)] for j in range(4)]
+		self.score = 0
 
 	def initiate(self):
 
@@ -36,6 +37,7 @@ class Grid2048:
 
 	def moveUp(self):
 		flag = False
+		available = set([0, 1, 2, 3])
 		for i in range(4):
 			for j in range(4):
 				if self.grid[i][j] != 0:
@@ -43,9 +45,11 @@ class Grid2048:
 					val = self.grid[i][j]
 					while k > 0:
 						k -= 1
-						if self.grid[k][j] != 0 and self.grid[k][j] == val:
+						if self.grid[k][j] != 0 and self.grid[k][j] == val and k in available:
 							self.grid[k+1][j] = 0
 							self.grid[k][j] *= 2
+							self.score += self.grid[k][j]
+							available.remove(k)
 							flag = True
 							break
 						elif self.grid[k][j] != 0:
@@ -61,6 +65,7 @@ class Grid2048:
 
 	def moveDown(self):
 		flag = False
+		available = set([0, 1, 2, 3])
 		for i in range(3, -1, -1):
 			for j in range(3, -1, -1):
 				if self.grid[i][j] != 0:
@@ -68,9 +73,11 @@ class Grid2048:
 					val = self.grid[i][j]
 					while k < 3:
 						k += 1
-						if self.grid[k][j] != 0 and self.grid[k][j] == val:
+						if self.grid[k][j] != 0 and self.grid[k][j] == val and k in available:
 							self.grid[k-1][j] = 0
 							self.grid[k][j] *= 2
+							self.score += self.grid[k][j]
+							available.remove(k)
 							flag = True
 							break
 						elif self.grid[k][j] != 0:
@@ -85,6 +92,7 @@ class Grid2048:
 
 	def moveLeft(self):
 		flag = False
+		available = set([0, 1, 2, 3])
 		for i in range(4):
 			for j in range(4):
 				if self.grid[i][j] != 0:
@@ -92,9 +100,11 @@ class Grid2048:
 					val = self.grid[i][j]
 					while k > 0:
 						k -= 1
-						if self.grid[i][k] != 0 and self.grid[i][k] == val:
+						if self.grid[i][k] != 0 and self.grid[i][k] == val and k in available:
 							self.grid[i][k+1] = 0
 							self.grid[i][k] *= 2
+							self.score += self.grid[i][k]
+							available.remove(k)
 							flag = True
 							break
 						elif self.grid[i][k] != 0:
@@ -109,6 +119,7 @@ class Grid2048:
 
 	def moveRight(self):
 		flag = False
+		available = set([0, 1, 2, 3])
 		for i in range(3, -1, -1):
 			for j in range(3, -1, -1):
 				if self.grid[i][j] != 0:
@@ -116,9 +127,11 @@ class Grid2048:
 					val = self.grid[i][j]
 					while k < 3:
 						k += 1
-						if self.grid[i][k] != 0 and self.grid[i][k] == val:
+						if self.grid[i][k] != 0 and self.grid[i][k] == val and k in available:
 							self.grid[i][k-1] = 0
 							self.grid[i][k] *= 2
+							self.score += self.grid[i][k]
+							available.remove(k)
 							flag = True
 							break
 						elif self.grid[i][k] != 0:
@@ -196,6 +209,11 @@ class Grid2048:
 
 	def checkGrid(self):
 
+		for i in range(4):
+			for j in range(4):
+				if self.grid[i][j] == 2048:
+					return None
+
 		if self.moveRightCheck() or self.moveLeftCheck() or self.moveUpCheck() or self.moveDownCheck():
 			return True
 
@@ -213,6 +231,38 @@ class Grid2048:
 
 		print t.draw()
 
+	def showScore(self):
+		return self.score
+
+	def updateHighScore(self):
+
+		try:
+			f = open("HighScore.txt", 'r')
+		except:
+			f = open("HighScore.txt", 'w')
+			f.write(str(0))
+			f.close()
+			f = open("HighScore.txt", 'r')
+
+		highscore = int(f.readline())
+
+		f.close()
+
+		f = open("HighScore.txt", 'w')
+		f.write(str(max(self.score, highscore)))
+		f.close()
+
+def showHighScore():
+
+	try:
+		f = open("HighScore.txt", 'r')
+		highscore = int(f.readline())
+		f.close()
+	except:
+		highscore = 0
+
+	return highscore
+
 def main():
 
 	print "Hello! Welcome to 2048!"
@@ -226,12 +276,11 @@ def main():
 	G = Grid2048()
 	G.initiate()
 	G.printGrid()
+	print "Score:", G.showScore()
+	print "High Score:", showHighScore()
 	print
 
 	while True:
-		if G.checkGrid() == False:
-			print "Game Over!"
-			return 
 		for event in pygame.event.get():
 			if event.type == pygame.KEYDOWN:
 				if event.key == 273:
@@ -244,7 +293,21 @@ def main():
 					G.moveRight()
 				elif event.key == 27:
 					return
+				G.updateHighScore()
+
 				G.printGrid()
+				print "Score:", G.showScore()
+				print "High Score:", showHighScore()
 				print
+
+				if G.checkGrid() == False:
+					G.updateHighScore()
+					print "Game Over!"
+					return
+				elif G.checkGrid() == None:
+					G.updateHighScore()
+					print "You Win!"
+					return
+
 
 main()
