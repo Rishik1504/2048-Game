@@ -1,12 +1,13 @@
-import random
-import pygame
+import random, pygame, os, pickle
 from texttable import Texttable
+import copy
 
 class Grid2048:
 
 	def __init__(self):
 		self.grid = [[0 for i in range(4)] for j in range(4)]
-		self.score = 0
+		self.score = [0]
+		self.history = []
 
 	def initiate(self):
 
@@ -48,7 +49,7 @@ class Grid2048:
 						if self.grid[k][j] != 0 and self.grid[k][j] == val and k in available:
 							self.grid[k+1][j] = 0
 							self.grid[k][j] *= 2
-							self.score += self.grid[k][j]
+							self.score.append(self.grid[k][j] + self.score[-1])
 							available.remove(k)
 							flag = True
 							break
@@ -76,7 +77,7 @@ class Grid2048:
 						if self.grid[k][j] != 0 and self.grid[k][j] == val and k in available:
 							self.grid[k-1][j] = 0
 							self.grid[k][j] *= 2
-							self.score += self.grid[k][j]
+							self.score.append(self.grid[k][j] + self.score[-1])
 							available.remove(k)
 							flag = True
 							break
@@ -103,7 +104,7 @@ class Grid2048:
 						if self.grid[i][k] != 0 and self.grid[i][k] == val and k in available:
 							self.grid[i][k+1] = 0
 							self.grid[i][k] *= 2
-							self.score += self.grid[i][k]
+							self.score.append(self.grid[i][k] + self.score[-1])
 							available.remove(k)
 							flag = True
 							break
@@ -130,7 +131,7 @@ class Grid2048:
 						if self.grid[i][k] != 0 and self.grid[i][k] == val and k in available:
 							self.grid[i][k-1] = 0
 							self.grid[i][k] *= 2
-							self.score += self.grid[i][k]
+							self.score.append(self.grid[i][k] + self.score[-1])
 							available.remove(k)
 							flag = True
 							break
@@ -232,7 +233,7 @@ class Grid2048:
 		print t.draw()
 
 	def showScore(self):
-		return self.score
+		return self.score[-1]
 
 	def updateHighScore(self):
 
@@ -249,8 +250,20 @@ class Grid2048:
 		f.close()
 
 		f = open("HighScore.txt", 'w')
-		f.write(str(max(self.score, highscore)))
+		f.write(str(max(self.score[-1], highscore)))
 		f.close()
+
+	def storeHistory(self):
+
+		self.history.append(copy.deepcopy(self.grid))
+
+	def recallHistory(self):
+
+		self.grid = self.history.pop()
+
+	def recallScore(self):
+
+		return self.score.pop()
 
 def showHighScore():
 
@@ -280,19 +293,43 @@ def main():
 	print "High Score:", showHighScore()
 	print
 
+	try:
+		os.remove("History.dat")
+	except:
+		pass
+
+	dic = {"Up": 273, "Down":274, "Left":276, "Right": 275,
+			"Esc":27, "BackSpace":8
+			}
+
+	G.storeHistory()
+
 	while True:
 		for event in pygame.event.get():
 			if event.type == pygame.KEYDOWN:
-				if event.key == 273:
+				if event.key == dic["Up"]:
+					G.storeHistory()
 					G.moveUp()
-				elif event.key == 274:
+					G.storeHistory()
+				elif event.key == dic["Down"]:
+					G.storeHistory()
 					G.moveDown()
-				elif event.key == 276:
+					G.storeHistory()
+				elif event.key == dic["Left"]:
+					G.storeHistory()
 					G.moveLeft()
-				elif event.key == 275:
+					G.storeHistory()
+				elif event.key == dic["Right"]:
+					G.storeHistory()
 					G.moveRight()
-				elif event.key == 27:
+					G.storeHistory()
+				elif event.key == dic["Esc"]:
 					return
+				elif event.key == dic["BackSpace"]:
+					G.recallHistory()
+					G.recallHistory()
+					G.recallScore()
+
 				G.updateHighScore()
 
 				G.printGrid()
